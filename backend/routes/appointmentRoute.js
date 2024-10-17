@@ -1,5 +1,6 @@
 import express from 'express';
 import AppointmentController from '../controllers/appointmentController.js';
+
 import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -9,5 +10,4 @@ router.get('/', authenticate, AppointmentController.getUserAppointments);
 router.delete('/:id', authenticate, AppointmentController.cancelAppointment);
 router.put('/:id', authenticate, AppointmentController.updateAppointment);
 
-
-export default AppointmentController;
+export default router;

@@ -6,6 +6,7 @@ class DentistController {
             const dentist = await DentistService.createDentist(req.body);
             res.status(201).json(dentist);
         } catch (error) {
+            console.log(error.message);
             res.status(500).json({ error: error.message });
         }
     };
@@ -15,6 +16,7 @@ class DentistController {
             const dentists = await DentistService.getDentists();
             res.json(dentists);
         } catch (error) {
+            console.log(error.message);
             res.status(500).json({ error: error.message });
         }
     };

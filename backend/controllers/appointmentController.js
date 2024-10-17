@@ -6,6 +6,7 @@ class AppointmentController {
             const appointment = await AppointmentService.createAppointment(req.body);
             res.status(201).json(appointment);
         } catch (error) {
+            console.log(error.message);
             res.status(500).json({ error: error.message });
         }
     };
@@ -15,6 +16,7 @@ class AppointmentController {
             const appointments = await AppointmentService.getUserAppointments(req.user.id);
             res.json(appointments);
         } catch (error) {
+            console.log(err.message);
             res.status(500).json({ error: error.message });
         }
     };
@@ -24,6 +26,7 @@ class AppointmentController {
             await AppointmentService.cancelAppointment(req.params.id);
             res.status(204).send();
         } catch (error) {
+            console.log(error.message);
             res.status(500).json({ error: error.message });
         }
     };
@@ -36,7 +39,8 @@ class AppointmentController {
           }
           res.json(updatedAppointment);
         } catch (error) {
-          res.status(500).json({ error: error.message });
+            console.log(error.message);
+            res.status(500).json({ error: error.message });
         }
     };
 }
