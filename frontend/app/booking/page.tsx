@@ -121,8 +121,7 @@ export default function BookingPage() {
                         selected={selectedDate}
                         onSelect={setSelectedDate}
                         className="rounded-md border w-full h-full flex"
-
-
+                        disabled={(date) =>date < new Date()}
                     />
                 </div>            
             </div>
