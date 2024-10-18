@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
     try {
         let response;
+        let data;
         
         if (action === 'register') {
             response = await fetch(`${API_URL}/users/register`, {
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
                 },
                 body: JSON.stringify(user),
             });
+            data = await response.json();
+            return NextResponse.json({ message : "User registered" }, { status : 201 });
         } else if (action === 'login') {
             response = await fetch(`${API_URL}/users/login`, {
                 method: 'POST',
@@ -31,16 +34,16 @@ export async function POST(req: Request) {
                 },
                 body: JSON.stringify(user),
             });
+            data = await response.json();
         } else {
             return NextResponse.json({ message: 'Invalid action.' }, { status: 400 });
         }
 
-        const data = await response.json();
-
+        
         if (!response.ok) {
             return NextResponse.json({ message: data.message }, { status: response.status });
         }
-        return NextResponse.json({ token : data.token });
+        return NextResponse.json({ token : data.token, user: data.user });
     } catch (error) {
         console.error('Error in auth API:', error);
         const message = error instanceof Error ? error.message : 'An unexpected error occurred.';

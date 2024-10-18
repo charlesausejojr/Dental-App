@@ -3,17 +3,18 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext';
+import { LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { isAuthenticated, logout } = useAuth(); // Access user info
 
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/booking', label: 'Book' },
-    { href: '/login', label: 'Login' },
-    { href: '/register', label: 'Register' },
-  ]
+  ];
 
   return (
     <header className="bg-slate-50 border-b border-slate-200">
@@ -22,24 +23,67 @@ export default function Navbar() {
           <Link href="/" className="text-xl font-semibold text-slate-800">
             Dental<span className="text-blue-600">Scheduler</span>
           </Link>
-          <div className="flex space-x-4">
+
+          <div className="flex space-x-4 items-center">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                   pathname === item.href
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 )}
               >
                 {item.label}
               </Link>
             ))}
+
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                  'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  pathname === "/dashboard" 
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                )}
+                >
+                  Appointments
+                </Link>
+                <button onClick={logout} className="bg-transparent">
+                  <LogOut className='w-4 h-4 text-slate-600'/>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(
+                    'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    pathname === "/login" 
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  )}>
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className={cn(
+                    'px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    pathname === "/register" 
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  )}>
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
     </header>
-  )
+  );
 }

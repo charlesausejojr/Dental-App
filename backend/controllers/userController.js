@@ -19,7 +19,7 @@ class UserController {
             const user = await UserService.findUserByEmail(req.body.email);
                 if (user && (await bcrypt.compare(req.body.password, user.password))) {
                 const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-                res.json({ token });
+                res.json({ token, user });
             } else {
                 res.status(401).json({ message: 'Invalid credentials' });
             }

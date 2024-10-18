@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { AuthProvider } from "@/context/AuthContext";
+import { montserrat } from "./fonts/fonts";
 import "./globals.css";
 import Navbar from './ui/navbar'
 import Footer from './ui/footer'
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -28,15 +18,17 @@ export default function RootLayout({
   return (
     <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${montserrat.className} antialiased`}
         >
-          <div className="min-h-screen flex flex-col">
-            <Navbar/>
-            <div className="flex flex-grow flex-col">
-              {children}
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
+              <Navbar/>
+              <div className="flex flex-grow flex-col">
+                {children}
+              </div>
+              <Footer/>
             </div>
-            <Footer/>
-          </div>
+          </AuthProvider>
         </body>
     </html>
   );

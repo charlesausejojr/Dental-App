@@ -7,40 +7,48 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { User } from '@/lib/types';
+import { useAuth } from '@/context/AuthContext'
+import { ErrorModal } from '../ui/errorModal';
 
-export default function Page() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const router = useRouter();
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const { login } = useAuth()
+
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically make an API call to your backend
-    console.log('Logging in with:', { email, password })
     try {
-        const response = await fetch('/api/auth?action=login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
+      const response = await fetch('/api/auth?action=login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(errorData.error);
-            throw new Error(`Error logging in User: ${response.statusText}`);
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        setErrorMessage(errorData.error || 'Invalid credentials')
+        setIsErrorModalOpen(true)
+        return
+      }
 
-        const { token } = await response.json();
-        localStorage.setItem('token', token);
+      const { token, user } = await response.json()
+      console.log("User retrieved: ", user)
+
+      if (token && user) {
+        login(token, user)
+        router.push('/dashboard')
+      }
     } catch (error) {
-        console.error('Error logging in User :', error);
+      console.error('Error logging in User:', error)
+      setErrorMessage('An unexpected error occurred. Please try again.')
+      setIsErrorModalOpen(true)
     }
-
-    // On successful login, redirect to dashboard
-    // router.push('/dashboard')
   }
 
   return (
@@ -89,6 +97,11 @@ export default function Page() {
           </CardFooter>
         </form>
       </Card>
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        errorMessage={errorMessage}
+      />
     </div>
   )
 }

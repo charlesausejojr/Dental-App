@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useAuth } from '@/context/AuthContext';
 
 interface Appointment {
   id: string
@@ -16,6 +17,7 @@ export default function UserDashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
+  const { user } = useAuth();
 
   const mockAppointments: Appointment[] = [
     {
@@ -94,7 +96,7 @@ export default function UserDashboard() {
       
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-700">Upcoming Appointments</h2>
+          <h2 className="text-xl font-semibold text-gray-700">Upcoming Appointments for {user?.name}</h2>
         </div>
         
         {appointments.length > 0 ? (
