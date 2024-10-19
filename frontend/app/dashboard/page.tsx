@@ -1,169 +1,204 @@
 'use client';
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Suspense, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import DateSelector from '../ui/booking/dateSelector';
+import AvailableSlots from '../ui/booking/availableSlots';
+import { useBooking } from '@/hooks/useBooking';
 import { useAuth } from '@/context/AuthContext';
-
-interface Appointment {
-  id: string
-  dentist: string
-  date: string
-  time: string
-}
+import { Appointment } from '@/lib/types';
+import { toast, Toaster } from 'sonner';
+import LoadingSpinner from '../ui/loading-spinner';
 
 export default function UserDashboard() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('');
+  const {
+    bookedAppointments,
+    selectedDate,
+    setSelectedDate,
+    availableSlots,
+    selectedSlot,
+    setSelectedSlot,
+    setSelectedDentist,
+    formatDate,
+  } = useBooking();
+
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment>();
   const { user } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
-  const mockAppointments: Appointment[] = [
-    {
-      id: '1',
-      dentist: 'Dr. John Doe',
-      date: '2024-10-20',
-      time: '09:00 AM',
-    },
-    {
-      id: '2',
-      dentist: 'Dr. Jane Smith',
-      date: '2024-10-22',
-      time: '11:30 AM',
-    },
-    {
-      id: '3',
-      dentist: 'Dr. Alice Johnson',
-      date: '2024-10-25',
-      time: '02:00 PM',
-    },
-  ]
-  
-  useEffect(() => {
-    fetchAppointments()
-  }, [])
+  const handleReschedule = async () => {
+    const updatedAppointment = {
+      ...selectedAppointment,
+      date: formatDate(selectedDate || new Date()),
+      time: selectedSlot,
+    };
 
-  const fetchAppointments = async () => {
-    // API call to fetch user's appointments
-    // setAppointments(response.data)
-    setAppointments(mockAppointments);
-  }
-
-  /*
-  const handleReschedule = async (newDate: string, newTime: string) => {
-    // API call to reschedule appointment
-    // Update appointments state
-    // Close dialog
-  }
-  */
-
-  const handleReschedule = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent the default form submission behavior
-  
-    if (selectedAppointment) {
-      const updatedAppointment = {
-        ...selectedAppointment,
-        date: newDate,
-        time: newTime,
-      };
-  
-      // Update the appointments state with the new appointment details
-      setAppointments((prev) =>
-        prev.map((appointment) =>
-          appointment.id === updatedAppointment.id ? updatedAppointment : appointment
-        )
-      );
-
-      // Add API update call
-  
-      // Close the dialog and reset the selected appointment
-      setSelectedAppointment(null);
-      setNewDate('');
-      setNewTime('');
+    try {
+      await fetch('/api/appointments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || '',
+        },
+        body: JSON.stringify({ id: selectedAppointment?._id, appointmentData: updatedAppointment }),
+      });
+      console.log("Updating appointment", updatedAppointment);
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error during reschedule:', error);
     }
   };
-  
 
   const handleCancel = async (appointmentId: string) => {
-    // API call to cancel appointment
-    // Update appointments state
-  }
+    try {
+      await fetch(`/api/appointments?id=${appointmentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token || '' },
+      });
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error canceling appointment:', error);
+    }
+  };
+
+  const handleRescheduleClick = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const promise = handleReschedule();
+    toast.promise(promise, {
+      loading: 'Rescheduling...',
+      success: async () => {
+        window.location.reload();
+        return 'You have now rescheduled this appointment';
+      },
+      error: 'Failed to reschedule',
+    });
+  };
+
+  const handleCancelClick = async (event: React.FormEvent, appointmentId: string) => {
+    event.preventDefault();
+    const promise = handleCancel(appointmentId);
+    toast.promise(promise, {
+      loading: 'Canceling appointment...',
+      success: async () => {
+        window.location.reload();
+        return 'You have now canceled this appointment';
+      },
+      error: 'Failed to cancel',
+    });
+  };
+
+  // Helper function to check if an appointment is in the past
+  const isPastAppointment = (appointment: Appointment) => {
+    const appointmentDateTime = new Date(`${appointment.date} ${appointment.time}`);
+    return appointmentDateTime < new Date();
+  };
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      <h1 className="text-3xl font-semibold text-gray-800 mb-6">Your Dashboard</h1>
-      
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-700">Upcoming Appointments for {user?.name}</h2>
-        </div>
-        
-        {appointments.length > 0 ? (
-          <ul>
-            {appointments.map((appointment) => (
-              <li key={appointment.id} className="px-6 py-4 border-b last:border-b-0 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-gray-700">{appointment.dentist}</p>
-                  <p className="text-gray-600">{appointment.date} at {appointment.time}</p>
-                </div>
-                <div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="mr-2" onClick={() => setSelectedAppointment(appointment)}>
-                        Reschedule
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Reschedule Appointment</DialogTitle>
-                      </DialogHeader>
-                      {/* Add rescheduling form here */}
-                      <form onSubmit={handleReschedule}>
-                        <div className="mb-4">
-                          <label className="block text-gray-700">New Date</label>
-                          <input
-                            type="date"
-                            defaultValue={appointment.date}
-                            value={newDate}
-                            onChange={(e) => setNewDate(e.target.value)}
-                            className="border rounded w-full px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-gray-700">New Time</label>
-                          <input
-                            defaultValue={appointment.time}
-                            type="time"
-                            value={newTime}
-                            onChange={(e) => setNewTime(e.target.value)}
-                            className="border rounded w-full px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div className="flex justify-end">
-                          <Button type="submit" variant="default" className="mr-2">
-                            Confirm
-                          </Button>
-                          <Button variant="outline" onClick={() => setSelectedAppointment(null)}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="destructive" onClick={() => handleCancel(appointment.id)}>
-                    Cancel
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="px-6 py-4 text-gray-600">You have no upcoming appointments.</p>
-        )}
-      </div>
-    </div>
-  )
+    <Suspense fallback={<LoadingSpinner />}>
+      <motion.div className="container mx-auto px-6 py-8">
+        <motion.h1 
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-3xl font-semibold text-gray-800 mb-6">
+            Your Dashboard
+          </motion.h1>
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Upcoming Appointments for {user?.name}
+            </h2>
+          </div>
+          <AnimatePresence> 
+            {bookedAppointments && bookedAppointments.length > 0 ? (
+              <ul>
+                {bookedAppointments
+                  .slice() // Create a shallow copy to avoid mutating the original array
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by date
+                  .map((appointment: Appointment) => (
+                    <li
+                      key={appointment._id}
+                      className="px-6 py-4 border-b last:border-b-0 flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-700">{appointment.dentist.name}</p>
+                        <p className="text-gray-600">
+                          {appointment.date} at {appointment.time}
+                        </p>
+                      </div>
+                      <div>
+                        {isPastAppointment(appointment) ? (
+                          <span className="text-green-600 font-semibold">Completed</span>
+                        ) : (
+                          <>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="mr-2"
+                                  onClick={() => {
+                                    setSelectedDentist(appointment.dentist);
+                                    setSelectedAppointment(appointment);
+                                  }}
+                                >
+                                  Reschedule
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Reschedule Appointment</DialogTitle>
+                                </DialogHeader>
+                                <form onSubmit={handleRescheduleClick}>
+                                  <div className="mb-4">
+                                    <label className="block text-gray-700">New Date</label>
+                                    <DateSelector
+                                      selectedDate={selectedDate}
+                                      onDateChange={setSelectedDate}
+                                    />
+                                  </div>
+                                  <div className="mb-4">
+                                    <label className="block text-gray-700">New Time</label>
+                                    <AvailableSlots
+                                      availableSlots={availableSlots}
+                                      selectedSlot={selectedSlot}
+                                      onSelectSlot={setSelectedSlot}
+                                      onBook={handleReschedule}
+                                    />
+                                  </div>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="destructive"
+                              onClick={(e) => handleCancelClick(e, appointment._id)}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            ) : (
+              <p className="px-6 py-4 text-gray-600">You have no upcoming appointments.</p>
+            )}
+          </AnimatePresence>
+        </motion.div>
+        <Toaster richColors />
+      </motion.div>
+    </Suspense>
+  );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/context/AuthContext'
-import { ErrorModal } from '../ui/errorModal';
+import { ErrorModal } from '../ui/login/errorModal';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -52,7 +53,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center pt-10">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="container mx-auto flex items-center justify-center pt-10">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>
@@ -102,6 +107,6 @@ export default function LoginPage() {
         onClose={() => setIsErrorModalOpen(false)}
         errorMessage={errorMessage}
       />
-    </div>
+    </motion.div>
   )
 }

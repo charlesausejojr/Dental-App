@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { User } from '@/lib/types';
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -19,7 +19,7 @@ export default function RegisterPage() {
     e.preventDefault()
     // Here you would typically make an API call to your backend
     console.log('Registering with:', { name, email, password })
-    const newUser : User = { name, email, password};
+    const newUser  = { name, email, password};
     try {
         const response = await fetch('/api/auth?action=register', {
             method: 'POST',
@@ -43,7 +43,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center pt-10">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="container mx-auto flex items-center justify-center pt-10">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Register</CardTitle>
@@ -99,6 +103,6 @@ export default function RegisterPage() {
           </CardFooter>
         </form>
       </Card>
-    </div>
+    </motion.div>
   )
 }

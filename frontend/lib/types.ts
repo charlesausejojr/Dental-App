@@ -4,11 +4,13 @@ export type Slot = {
 }
 
 export type Dentist = {
+   _id : string,
    name : string,
    slots? :  Slot[]
 }
 
 export type Appointment = {
+    _id : string,
     user : User,
     dentist : Dentist,
     date : string,
@@ -16,6 +18,7 @@ export type Appointment = {
 }
 
 export type User = {
+    _id : string,
     name : string,
     email : string,
     password : string,
