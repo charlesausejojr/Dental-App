@@ -9,6 +9,10 @@ class DentistService {
     static async getDentists () {
         return await Dentist.find();
     };
+
+    static async updateDentist(id, data) {
+        return await Dentist.findByIdAndUpdate(id, data, { new: true }); 
+    };
 }
 
 export default DentistService;

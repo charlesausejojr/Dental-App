@@ -11,6 +11,11 @@ class UserService {
     static async findUserByEmail (email) {
         return await User.findOne({ email });
     };
+
+    static async updateUserName(userId, newName) {
+        return await User.findByIdAndUpdate(userId, { name: newName }, { new: true });
+    };
+
 }
 
 export default UserService;

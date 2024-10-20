@@ -1,16 +1,16 @@
 import express from "express";
 import cors from "cors";
-
-// charlesausejojr
-// KfQLHfKeNKLKHT6f
-
 import userRoute from "./routes/userRoute.js";
 import dentistRoute from "./routes/dentistRoute.js";
 import appointmentRoute from "./routes/appointmentRoute.js";
+import apiLimiter from "./middlewares/rateLimiter.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Using middleware for Rate Limiting
+app.use('/api/', apiLimiter);
 
 // Use routes
 app.use('/api/users', userRoute);

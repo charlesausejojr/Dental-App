@@ -28,6 +28,22 @@ class UserController {
             res.status(500).json({ error: error.message });
         }
     };
+
+    static async updateName(req, res) {
+        const { userId, newName } = req.body;
+        try {
+            const updatedUser = await UserService.updateUserName(userId, newName);
+            if (updatedUser) {
+                console.log("Updated user :", updatedUser);
+                res.json(updatedUser);
+            } else {
+                res.status(404).json({ message: 'User not found' });
+            }
+        } catch (error) {
+            console.log(error.message);
+            res.status(500).json({ error: error.message });
+        }
+    };
 }
 
 export default UserController;

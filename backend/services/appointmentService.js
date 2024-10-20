@@ -6,6 +6,10 @@ class AppointmentService {
         return await appointment.save();
     };
 
+    static async getAllAppointments(){
+        return await Appointment.find();
+    }
+
     static async getUserAppointments (userId) {
         return await Appointment.find({ user: userId }).populate('dentist');
     };
