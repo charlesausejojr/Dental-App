@@ -7,101 +7,144 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-type Slot = {
-  date: string
-  time: string[]
-}
-
-type Dentist = {
-  id: string
-  name: string
-  slots: Slot[]
-}
+import { Dentist } from '@/lib/types';
+import { useBooking } from '@/hooks/useBooking';
 
 export default function DentistAvailabilityManager() {
-  const [dentists, setDentists] = useState<Dentist[]>([])
   const [newDentistName, setNewDentistName] = useState('')
   const [selectedDentist, setSelectedDentist] = useState<Dentist | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
   const [currentTime, setCurrentTime] = useState('09:00')
   const [authorized, setAuthorized] = useState(false)
-  const [tokenInput, setTokenInput] = useState('')
+  const [dentistList, setDentistList] = useState<Dentist[] | undefined>([]); 
 
-  useEffect(() => {
-    fetchDentists()
-  }, [])
 
-  const fetchDentists = async () => {
-    // Mock data for dentists
-    const mockDentists: Dentist[] = [
-      { id: '1', name: 'Dr. John Doe', slots: [] },
-      { id: '2', name: 'Dr. Jane Smith', slots: [] },
-    ]
-    setDentists(mockDentists)
-  }
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+  const { dentists, formatDate } = useBooking();
 
-  const handleCreateDentist = () => {
+  const formatTime = (time: string) => {
+    if (time === "12:00 AM") return time;
+    else {
+      const [hour, minute] = time.split(':').map(Number);
+      // Ensure minute is a valid number; default to 0 if NaN
+      const validMinute = isNaN(minute) ? 0 : minute;
+      const ampm = hour >= 12 ? (hour === 12 ? 'PM' : 'PM') : 'AM';
+      const formattedHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
+      return `${formattedHour}:${validMinute.toString().padStart(2, '0')} ${ampm}`;
+    }
+  };
+
+  const handleCreateDentist = async () => {
     if (newDentistName) {
-      const newDentist: Dentist = {
-        id: Date.now().toString(),
+      const newDentist = {
         name: newDentistName,
         slots: [],
       }
-      setDentists([...dentists, newDentist])
-      setNewDentistName('')
+      try {
+        const response = await fetch ('/api/dentists', {
+          method: 'POST',
+          headers : {
+            'Content-Type': 'application/json',
+            'Authorization': token || '',
+          },
+          body : JSON.stringify(newDentist)
+        });
+        if (!response.ok) throw new Error('Failed to create dentist');
+        const { createdDentist } = await response.json();
+        setDentistList([...dentistList || [], createdDentist]); // Update local dentist list state
+        setNewDentistName(''); // Clear input
+        console.log(createdDentist);
+      } catch (error) {
+        console.error('Error during creation of Dentist:', error);
+      }
     }
   }
 
   const handleAddTime = () => {
     if (currentTime && !selectedTimes.includes(currentTime)) {
-      setSelectedTimes([...selectedTimes, currentTime].sort())
+      setSelectedTimes([...selectedTimes, currentTime].sort());
     }
-  }
+  };
 
   const handleRemoveTime = (time: string) => {
     setSelectedTimes(selectedTimes.filter(t => t !== time))
   }
 
-  const handleAddAvailability = () => {
+  const handleAddAvailability = async () => {
     if (selectedDentist && selectedDate && selectedTimes.length > 0) {
-      const formattedDate = selectedDate.toISOString().split('T')[0]
-      const updatedDentist = {
-        ...selectedDentist,
-        slots: [
-          ...selectedDentist.slots,
-          { date: formattedDate, time: selectedTimes },
-        ],
-      }
-      setDentists(dentists.map(d => d.id === selectedDentist.id ? updatedDentist : d))
-      setSelectedDentist(updatedDentist)
-      setSelectedTimes([])
-    }
-  }
+        const formattedDate = formatDate(selectedDate);
 
-  const handleAuthorization = () => {
-    const token = process.env.NEXT_PUBLIC_AUTH_TOKEN; // Get the token from environment variables
-    if (tokenInput === token) {
-      setAuthorized(true);
-    } else {
-      alert('Unauthorized access. Please check your token.');
+        // Ensure slots is defined, defaulting to an empty array if undefined
+        const existingSlots = selectedDentist.slots || [];
+
+        // Check if the slot for the selected date already exists
+        const existingSlotIndex = selectedDentist.slots?.findIndex(slot => slot.date === formattedDate);
+
+        let updatedSlots;
+
+        if (existingSlotIndex !== -1 && existingSlotIndex) {
+          // Update the existing slot with new times, avoiding duplicates
+          const existingSlot = existingSlots[existingSlotIndex];
+          const updatedTimes = Array.from(
+              new Set([...existingSlot.time, ...selectedTimes.map(formatTime)])
+          );
+
+          updatedSlots = [
+              ...existingSlots.slice(0, existingSlotIndex),
+              { ...existingSlot, time: updatedTimes },
+              ...existingSlots.slice(existingSlotIndex + 1),
+          ];
+      } else {
+          // Add a new slot for the selected date
+          updatedSlots = [
+              ...existingSlots,
+              { date: formattedDate, time: selectedTimes.map(formatTime) },
+          ];
+      }
+
+      const updatedDentist = { ...selectedDentist, slots: updatedSlots };
+      try {
+          await fetch(`/api/dentists`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token || '',
+              },
+              body: JSON.stringify({ id: selectedDentist?._id, updatedDentist }),
+          });
+          console.log("Updating dentist", updatedDentist);
+          // Update the selected dentist in local state without reloading
+          setSelectedDentist(updatedDentist);
+          setSelectedTimes([]); // Clear selected times after adding availability
+      } catch (error) {
+          console.error('Error during reschedule:', error);
+      }
     }
   };
+
+
+  useEffect(() => {
+    const handleAuthorization = () => {
+      const name = process.env.NEXT_PUBLIC_AUTH_NAME; // Get the token from environment variables
+      if (user) {
+        const userJSON = JSON.parse(user);
+        if (userJSON?.name === name) {
+          setAuthorized(true);
+        } else {
+          alert('Unauthorized access. Please check your token.');
+        }
+      }
+    };
+    setDentistList(dentists);
+    handleAuthorization();
+  },[dentists, user]);
 
   if (!authorized) {
     return (
       <div className="container mx-auto px-6 py-8">
-        <h1 className="text-3xl font-semibold text-gray-800 mb-6">Enter Access Token</h1>
-        <div className="flex space-x-2 mb-4">
-          <Input
-            type="text"
-            placeholder="Access Token"
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-          />
-          <Button onClick={handleAuthorization}>Submit</Button>
-        </div>
+        <h1 className="text-3xl font-semibold text-gray-800 mb-6">You have no access to this page</h1>
       </div>
     );
   }
@@ -134,13 +177,13 @@ export default function DentistAvailabilityManager() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="dentist-select">Select Dentist</Label>
-              <Select onValueChange={(value) => setSelectedDentist(dentists.find(d => d.id === value) || null)}>
+              <Select onValueChange={(value) => setSelectedDentist(dentists?.find(d => d._id === value) || null)}>
                 <SelectTrigger id="dentist-select">
                   <SelectValue placeholder="Choose a dentist" />
                 </SelectTrigger>
                 <SelectContent>
-                  {dentists.map((dentist) => (
-                    <SelectItem key={dentist.id} value={dentist.id}>
+                  {dentistList?.map((dentist) => (
+                    <SelectItem key={dentist._id} value={dentist._id}>
                       {dentist.name}
                     </SelectItem>
                   ))}
@@ -181,11 +224,9 @@ export default function DentistAvailabilityManager() {
                           key={time}
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveTime(time)}
-                        >
-                          {time} ✕
-                        </Button>
-                      ))}
+                          onClick={() => handleRemoveTime(time)}>
+                        {formatTime(time)} ✕ 
+                      </Button>))}
                     </div>
                   </div>
                 </div>
@@ -194,11 +235,11 @@ export default function DentistAvailabilityManager() {
 
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Current Availability</h3>
-                  {selectedDentist.slots.map((slot, index) => (
+                  {selectedDentist?.slots?.map((slot, index) => (
+                    slot.date >= formatDate(new Date()) && 
                     <div key={index} className="mb-2">
-                      <strong>{slot.date}:</strong> {slot.time.join(', ')}
-                    </div>
-                  ))}
+                        <strong>{slot.date}:</strong> {slot.time.join(', ')} 
+                    </div>))}
                 </div>
               </>
             )}

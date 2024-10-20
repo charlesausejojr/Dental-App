@@ -50,3 +50,33 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
+
+export async function PUT(req : Request) {
+    const { userId, name } = await req.json(); // Assuming you're updating the name; adjust as necessary
+    if (!userId || !name) {
+        return NextResponse.json({ error: 'User ID and name are required' }, { status: 400 });
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/update-name`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': req.headers.get('Authorization') || '',
+            },
+            body: JSON.stringify({ userId, newName : name })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            return NextResponse.json({ message: data.message }, { status: response.status });
+        }
+
+        const updatedUser  = await response.json();
+        return NextResponse.json({updatedUser});
+    } catch (error) {
+        console.error('Error updating user:', error);
+        const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
+}

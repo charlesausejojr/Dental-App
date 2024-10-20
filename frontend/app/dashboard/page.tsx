@@ -21,20 +21,33 @@ import LoadingSpinner from '../ui/loading-spinner';
 export default function UserDashboard() {
   const {
     bookedAppointments,
+    setBookedAppointments,
     selectedDate,
     setSelectedDate,
     availableSlots,
     selectedSlot,
     setSelectedSlot,
     setSelectedDentist,
+    setAvailableSlots,
     formatDate,
+    setRefresh
   } = useBooking();
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment>();
   const { user } = useAuth();
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
+  // Function to reset all props for AvailableSlots
+  const resetAvailableSlots = () => {
+    setSelectedSlot('');          // Reset the selected slot
+    setSelectedDate(undefined);   // Reset the selected date
+    setAvailableSlots([]);        // Clear available slots
+  };
+
   const handleReschedule = async () => {
+    if (!selectedAppointment) return;
+
     const updatedAppointment = {
       ...selectedAppointment,
       date: formatDate(selectedDate || new Date()),
@@ -51,6 +64,30 @@ export default function UserDashboard() {
         body: JSON.stringify({ id: selectedAppointment?._id, appointmentData: updatedAppointment }),
       });
       console.log("Updating appointment", updatedAppointment);
+
+      // Update state to reflect the rescheduled appointment
+      setBookedAppointments((prev) =>
+        prev?.map((appointment) =>
+          appointment._id === selectedAppointment?._id ? updatedAppointment : appointment
+        )
+      );
+
+      // Update available slots: Remove old slot and add new one
+      setAvailableSlots((prevSlots) => {
+        const oldSlot = selectedAppointment?.time;
+        const newSlot = selectedSlot;
+
+        // Filter out the old slot and add the new slot
+        const updatedSlots = prevSlots
+            ?.filter((slot) => slot !== newSlot) 
+            .concat(oldSlot)
+            .filter((slot, index, self) => self.indexOf(slot) === index); // Ensure no duplicates
+
+        return updatedSlots;
+      });
+
+      resetAvailableSlots();
+      setRefresh(true);
       return Promise.resolve();
     } catch (error) {
       console.error('Error during reschedule:', error);
@@ -58,11 +95,35 @@ export default function UserDashboard() {
   };
 
   const handleCancel = async (appointmentId: string) => {
+    if (!selectedAppointment) return;
+      
     try {
       await fetch(`/api/appointments?id=${appointmentId}`, {
         method: 'DELETE',
         headers: { 'Authorization': token || '' },
       });
+
+      // Remove the canceled appointment from the state
+      setBookedAppointments((prev) =>
+        prev?.filter((appointment) => appointment._id !== appointmentId)
+      );
+
+
+      // Update available slots: Remove old slot and add new one
+      setAvailableSlots((prevSlots) => {
+        const oldSlot = selectedAppointment?.time;
+        const newSlot = selectedSlot;
+        // Filter out the old slot and add the new slot
+        const updatedSlots = prevSlots
+            ?.filter((slot) => slot !== newSlot) 
+            .concat(oldSlot)
+            .filter((slot, index, self) => self.indexOf(slot) === index); // Ensure no duplicates
+
+        return updatedSlots;
+      });
+
+      resetAvailableSlots();
+      setRefresh(true);
       return Promise.resolve();
     } catch (error) {
       console.error('Error canceling appointment:', error);
@@ -75,7 +136,7 @@ export default function UserDashboard() {
     toast.promise(promise, {
       loading: 'Rescheduling...',
       success: async () => {
-        window.location.reload();
+        setIsDialogOpen(false);
         return 'You have now rescheduled this appointment';
       },
       error: 'Failed to reschedule',
@@ -88,7 +149,7 @@ export default function UserDashboard() {
     toast.promise(promise, {
       loading: 'Canceling appointment...',
       success: async () => {
-        window.location.reload();
+        setIsDialogOpen(false);
         return 'You have now canceled this appointment';
       },
       error: 'Failed to cancel',
@@ -128,10 +189,16 @@ export default function UserDashboard() {
                   .slice() // Create a shallow copy to avoid mutating the original array
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by date
                   .map((appointment: Appointment) => (
-                    <li
-                      key={appointment._id}
-                      className="px-6 py-4 border-b last:border-b-0 flex justify-between items-center"
-                    >
+                    <motion.li
+                        key={appointment._id}
+                        className={`px-6 py-4 border-b last:border-b-0 flex justify-between items-center ${
+                          isPastAppointment(appointment) ? 'bg-slate-100' : ''
+                        }`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
                       <div>
                         <p className="font-semibold text-gray-700">{appointment.dentist.name}</p>
                         <p className="text-gray-600">
@@ -143,7 +210,7 @@ export default function UserDashboard() {
                           <span className="text-green-600 font-semibold">Completed</span>
                         ) : (
                           <>
-                            <Dialog>
+                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                               <DialogTrigger asChild>
                                 <Button
                                   variant="outline"
@@ -151,6 +218,7 @@ export default function UserDashboard() {
                                   onClick={() => {
                                     setSelectedDentist(appointment.dentist);
                                     setSelectedAppointment(appointment);
+                                    setIsDialogOpen(true);
                                   }}
                                 >
                                   Reschedule
@@ -182,14 +250,18 @@ export default function UserDashboard() {
                             </Dialog>
                             <Button
                               variant="destructive"
-                              onClick={(e) => handleCancelClick(e, appointment._id)}
+                              onClick={(e) => {
+                                setSelectedDentist(appointment.dentist);
+                                setSelectedAppointment(appointment);
+                                handleCancelClick(e, appointment._id);
+                              }}
                             >
                               Cancel
                             </Button>
                           </>
                         )}
                       </div>
-                    </li>
+                    </motion.li>
                   ))}
               </ul>
             ) : (
