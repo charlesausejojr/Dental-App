@@ -27,7 +27,7 @@ The [Dental Scheduler](https://dental-m0kb5j64m-charles-projects-e2f0daab.vercel
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/charlesausejojr/DentalScheduler-Backend.git
+git clone https://github.com/charlesausejojr/dental-app.git
 ```
 ---
 ## System Architecture
