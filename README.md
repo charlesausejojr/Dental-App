@@ -1,5 +1,8 @@
 # Dental Scheduler
 
+## Video Demo
+[Google Drive Link](https://drive.google.com/file/d/1SaTfofWorcApyw8lLqeOvPMb2wf1G89i/view?usp=sharing)
+
 ## Overview
 The [Dental Scheduler](https://dental-m0kb5j64m-charles-projects-e2f0daab.vercel.app/) is a full-stack application designed to manage dental appointments efficiently. The backend service handles appointment scheduling, rescheduling, and cancellation, as well as managing available time slots. It is built using Node.js and Express, with MongoDB as the database. The frontend is developed using ReactJS and Next.js, providing a dynamic and user-friendly interface for managing appointments.
 
