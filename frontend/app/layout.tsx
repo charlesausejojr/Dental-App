@@ -8,6 +8,11 @@ import Footer from './ui/footer'
 export const metadata: Metadata = {
   title: "Dental Scheduler",
   description: "Schedule your Dental Appointments",
+  icons: {
+    icon: ['/favicon.ico'],
+    apple: ['/apple-touch-icon.png'],
+    shortcut: ['/apple-touch-icon.png']
+  }
 };
 
 export default function RootLayout({

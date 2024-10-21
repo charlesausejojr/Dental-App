@@ -38,11 +38,44 @@ export default function UserDashboard() {
   const { user } = useAuth();
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
-  // Function to reset all props for AvailableSlots
+  // Reset function with reused logic to clear slots and dates
   const resetAvailableSlots = () => {
-    setSelectedSlot('');          // Reset the selected slot
-    setSelectedDate(undefined);   // Reset the selected date
-    setAvailableSlots([]);        // Clear available slots
+    setSelectedSlot('');
+    setSelectedDate(undefined);
+    setAvailableSlots([]);
+  };
+
+  // Helper function to update available slots and ensure no undefined values
+  const updateAvailableSlots = (oldSlot?: string, newSlot?: string) =>
+    setAvailableSlots((prevSlots) =>
+      [...prevSlots.filter((slot) => slot !== newSlot), oldSlot]
+        .filter((slot): slot is string => !!slot) // Ensure only valid strings
+        .filter((slot, index, self) => self.indexOf(slot) === index) // Avoid duplicates
+    );
+
+  // Function to handle appointment updates (PUT / DELETE)
+  const handleAppointmentUpdate = async (
+    method: 'PUT' | 'DELETE',
+    url: string,
+    body?: object
+  ) => {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token || '',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) throw new Error(`Failed to ${method === 'PUT' ? 'update' : 'delete'} appointment`);
+
+      return response;
+    } catch (error) {
+      console.error(`Error during ${method === 'PUT' ? 'rescheduling' : 'cancellation'}:`, error);
+      throw error;
+    }
   };
 
   const handleReschedule = async () => {
@@ -54,80 +87,34 @@ export default function UserDashboard() {
       time: selectedSlot,
     };
 
-    try {
-      await fetch('/api/appointments', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token || '',
-        },
-        body: JSON.stringify({ id: selectedAppointment?._id, appointmentData: updatedAppointment }),
-      });
-      console.log("Updating appointment", updatedAppointment);
+    await handleAppointmentUpdate('PUT', '/api/appointments', {
+      id: selectedAppointment._id,
+      appointmentData: updatedAppointment,
+    });
 
-      // Update state to reflect the rescheduled appointment
-      setBookedAppointments((prev) =>
-        prev?.map((appointment) =>
-          appointment._id === selectedAppointment?._id ? updatedAppointment : appointment
+    // Update state for appointments and available slots
+    setBookedAppointments((prev) =>
+      prev?.map((appointment) =>
+        appointment._id === selectedAppointment._id ? updatedAppointment : appointment
         )
-      );
-
-      // Update available slots: Remove old slot and add new one
-      setAvailableSlots((prevSlots) => {
-        const oldSlot = selectedAppointment?.time;
-        const newSlot = selectedSlot;
-
-        // Filter out the old slot and add the new slot
-        const updatedSlots = prevSlots
-            ?.filter((slot) => slot !== newSlot) 
-            .concat(oldSlot)
-            .filter((slot, index, self) => self.indexOf(slot) === index); // Ensure no duplicates
-
-        return updatedSlots;
-      });
-
-      resetAvailableSlots();
-      setRefresh(true);
-      return Promise.resolve();
-    } catch (error) {
-      console.error('Error during reschedule:', error);
-    }
+    );
+    updateAvailableSlots(selectedAppointment.time, selectedSlot);
+    resetAvailableSlots();
+    setRefresh(true);
   };
 
   const handleCancel = async (appointmentId: string) => {
     if (!selectedAppointment) return;
-      
-    try {
-      await fetch(`/api/appointments?id=${appointmentId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': token || '' },
-      });
 
-      // Remove the canceled appointment from the state
-      setBookedAppointments((prev) =>
-        prev?.filter((appointment) => appointment._id !== appointmentId)
-      );
+    await handleAppointmentUpdate('DELETE', `/api/appointments?id=${appointmentId}`);
 
-
-      // Update available slots: Remove old slot and add new one
-      setAvailableSlots((prevSlots) => {
-        const oldSlot = selectedAppointment?.time;
-        const newSlot = selectedSlot;
-        // Filter out the old slot and add the new slot
-        const updatedSlots = prevSlots
-            ?.filter((slot) => slot !== newSlot) 
-            .concat(oldSlot)
-            .filter((slot, index, self) => self.indexOf(slot) === index); // Ensure no duplicates
-
-        return updatedSlots;
-      });
-
-      resetAvailableSlots();
-      setRefresh(true);
-      return Promise.resolve();
-    } catch (error) {
-      console.error('Error canceling appointment:', error);
-    }
+    // Remove canceled appointment and update available slots
+    setBookedAppointments((prev) =>
+      prev?.filter((appointment) => appointment._id !== appointmentId)
+    );
+    updateAvailableSlots(selectedAppointment.time, selectedSlot);
+    resetAvailableSlots();
+    setRefresh(true);
   };
 
   const handleRescheduleClick = async (event: React.FormEvent) => {
@@ -135,9 +122,9 @@ export default function UserDashboard() {
     const promise = handleReschedule();
     toast.promise(promise, {
       loading: 'Rescheduling...',
-      success: async () => {
+      success: () => {
         setIsDialogOpen(false);
-        return 'You have now rescheduled this appointment';
+        return 'You have now rescheduled this appointment ✅';
       },
       error: 'Failed to reschedule',
     });
@@ -148,9 +135,9 @@ export default function UserDashboard() {
     const promise = handleCancel(appointmentId);
     toast.promise(promise, {
       loading: 'Canceling appointment...',
-      success: async () => {
+      success: () => {
         setIsDialogOpen(false);
-        return 'You have now canceled this appointment';
+        return 'You have now canceled this appointment ✅';
       },
       error: 'Failed to cancel',
     });
