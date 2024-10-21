@@ -52,24 +52,24 @@ The Dental Scheduler application follows a client-server architecture with a cle
 
 1. ##### Frontend Components
    - **Pages**: 
-    -- ***Root Page***: The entry point to the site. Displays the services offered and a call to action.
-    -- ***Login/Register***: Enables user to Login and/or Register to the app.
-    -- ***Dashboard***: Enables user to view, reschedule or cancel his/her appointment.
-    -- ***Booking***: Enables user to choose from a list of Dentists and book an appointment.
-    -- ***Dentist Manager***: Hidden page for admins only to add Dentists and modify his/her availability.
+      - ***Root Page***: The entry point to the site. Displays the services offered and a call to action.
+      - ***Login/Register***: Enables user to Login and/or Register to the app.
+      - ***Dashboard***: Enables user to view, reschedule or cancel his/her appointment.
+      - ***Booking***: Enables user to choose from a list of Dentists and book an appointment.
+      - ***Dentist Manager***: Hidden page for admins only to add Dentists and modify his/her availability.
    - **Reusable Custom UI Components**:
-    -- ***AvailableSlots***: Renders the available slots.
-    -- ***DateSelector***: Enables user to select a date.
-    -- ***DentistSelector***: Enables user to select a dentist.
+      - ***AvailableSlots***: Renders the available slots.
+      - ***DateSelector***: Enables user to select a date.
+      - ***DentistSelector***: Enables user to select a dentist.
    - **Third Party UI Components**: Anything from ShadCN is automatically installed on the application inside the components/ui/ 
    - **APIs**: The api directory is a special folder used to create API routes. These routes allow you to build a backend directly within your Next.js application without needing a separate backend server. Although I can call my backend server directly, I am using this feature in Next.js to show how you can build a fullstack application with Next.js only. In this case, a separate backend server is being used but the application can survive without it.
-    -- ***appointments***: Calls the backend for Appointment CRUD operations.
-    -- ***dentists***: Calls the backend for Dentist CRUD operations.
-    -- ***auth***: Used for logging in, registration and updating of user details.
+      - ***appointments***: Calls the backend for Appointment CRUD operations.
+      - ***dentists***: Calls the backend for Dentist CRUD operations.
+      - ***auth***: Used for logging in, registration and updating of user details.
     - **Context**:
-    -- ***AuthContext***: The AuthContext provides a global state to manage user authentication and session management. It simplifies accessing user data, checking if a user is authenticated, and implementing login/logout functionality across multiple components.
+       - ***AuthContext***: The AuthContext provides a global state to manage user authentication and session management. It simplifies accessing user data, checking if a user is authenticated, and implementing login/logout functionality across multiple components.
     - **Hooks**:
-    -- ***useBooking***: This custom hook, useBooking, manages the state and logic for booking appointments in a dental scheduling system. It handles fetching dentists, user appointments, all appointments, and available slots. It also provides functions to format dates, book an appointment, and filter available slots based on the selected dentist and date. The hook integrates authentication through the useAuth context and ensures up-to-date data using useEffect triggers. It returns relevant state variables and functions to be used across components. This custom hook is being used by the Dashboard and Booking page.
+       - ***useBooking***: This custom hook, useBooking, manages the state and logic for booking appointments in a dental scheduling system. It handles fetching dentists, user appointments, all appointments, and available slots. It also provides functions to format dates, book an appointment, and filter available slots based on the selected dentist and date. The hook integrates authentication through the useAuth context and ensures up-to-date data using useEffect triggers. It returns relevant state variables and functions to be used across components. This custom hook is being used by the Dashboard and Booking page.
 
 2. ##### Backend Endpoints
 - **Appointment Endpoints** (requires authentication)
