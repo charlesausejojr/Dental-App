@@ -50,7 +50,7 @@ The Dental Scheduler application follows a client-server architecture with a cle
 
 ## Components
 
-1. ##### Frontend Components
+1. #### Frontend Components
    - **Pages**: 
       - ***Root Page***: The entry point to the site. Displays the services offered and a call to action.
       - ***Login/Register***: Enables user to Login and/or Register to the app.
@@ -71,21 +71,21 @@ The Dental Scheduler application follows a client-server architecture with a cle
     - **Hooks**:
        - ***useBooking***: This custom hook, useBooking, manages the state and logic for booking appointments in a dental scheduling system. It handles fetching dentists, user appointments, all appointments, and available slots. It also provides functions to format dates, book an appointment, and filter available slots based on the selected dentist and date. The hook integrates authentication through the useAuth context and ensures up-to-date data using useEffect triggers. It returns relevant state variables and functions to be used across components. This custom hook is being used by the Dashboard and Booking page.
 
-2. ##### Backend Endpoints
+2. #### Backend Endpoints
 - **Appointment Endpoints** (requires authentication)
--- ***POST `/api/appointments`***: Create a new appointment.  
--- ***GET `/api/appointments`***: Retrieve all appointments.  
--- ***GET `/api/appointments/:id`***: Retrieve appointments for a specific user.  
--- ***DELETE `/api/appointments/:id`***: Cancel an appointment.  
--- ***PUT `/api/appointments/:id`***: Update an appointment.  
+   - ***POST `/api/appointments`***: Create a new appointment.  
+   - ***GET `/api/appointments`***: Retrieve all appointments.  
+   - ***GET `/api/appointments/:id`***: Retrieve appointments for a specific user.  
+   - ***DELETE `/api/appointments/:id`***: Cancel an appointment.  
+   - ***PUT `/api/appointments/:id`***: Update an appointment.  
 - **Dentist Endpoints**
--- ***POST `/api/dentists`***: Create a new dentist record.  
--- ***GET `/api/dentists`***: Retrieve a list of all dentists.  
--- ***PUT `/api/dentists/:id`***: Update dentist information.  
+   - ***POST `/api/dentists`***: Create a new dentist record.  
+   - ***GET `/api/dentists`***: Retrieve a list of all dentists.  
+   - ***PUT `/api/dentists/:id`***: Update dentist information.  
 - **User Endpoints**
--- ***POST `/api/users/register`***: Register a new user.  
--- ***POST `/api/users/login`***: Authenticate a user and generate a token.  
--- ***PUT `/api/users/update-name`***: Update the user’s name (requires authentication).  
+   - ***POST `/api/users/register`***: Register a new user.  
+   - ***POST `/api/users/login`***: Authenticate a user and generate a token.  
+   - ***PUT `/api/users/update-name`***: Update the user’s name (requires authentication).  
 
 ## Database Schema
 **Appointment Model**
@@ -109,7 +109,7 @@ The Dental Scheduler application follows a client-server architecture with a cle
       {
         "date": "String",
         "time": ["String"]
-      }...
+      }
     ],
     "createdAt": "ISODate",
     "updatedAt": "ISODate"
